@@ -1,6 +1,5 @@
 ########### R script for creating seurat object. ###########
-########### Created by Danwen Qian on 13-01-2022. ###########
-########### Last modified by Danwen Qian on 13-01-2023. ###########
+########### Created by Danwen Qian###########
 
 library(Seurat)
 library(stringr)
@@ -238,8 +237,6 @@ scRNA <- AddMetaData(
 saveRDS(scRNA,"Taylor_osteosarcoma.rds")
 
 
-
-
 ##Wei_NatCancer_2022
 setwd("/mnt/beegfs01/scratch/d_qian/SingleCell/Wei_NatCancer_2022")
 dir<-dir("downloads/GSE195709_RAW/human")
@@ -270,7 +267,6 @@ scRNA <- AddMetaData(
 saveRDS(scRNA,"Wei_rhabdomyosarcoma.rds")
 
 
-
 ##Patel_DevCell_2022
 setwd("/mnt/beegfs01/scratch/d_qian/SingleCell/Patel_DevCell_2022")
 dir<-dir("downloads/GSE174376_RAW/human")
@@ -297,7 +293,6 @@ scRNA <- AddMetaData(
   metadata = scDblFinder
 )
 saveRDS(scRNA,"Patel_rhabdomyosarcoma.rds")
-
 
 ##Goodspeed_ClinCancerRes_2025
 setwd("/mnt/beegfs01/scratch/d_qian/SingleCell/Goodspeed_ClinCancerRes_2025")
