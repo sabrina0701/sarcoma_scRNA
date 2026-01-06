@@ -115,7 +115,7 @@ plot1 <- VlnPlot(combined,features = c("nFeature_RNA", "nCount_RNA", "percent.mt
 df <- FetchData(combined, vars = c("nFeature_RNA", "nCount_RNA", "percent.mt", "study"))
 
 library(ggplot2)
-library(patchwork)  # 用来拼图
+library(patchwork)  
 
 VlnPlot_custom <- function(object, features, group.by, ncol = 3, pt.size = 0.1) {
   plots <- list()
@@ -135,7 +135,6 @@ VlnPlot_custom <- function(object, features, group.by, ncol = 3, pt.size = 0.1) 
     plots[[f]] <- p
   }
   
-  # 拼接成一张图
   wrap_plots(plots, ncol = ncol)
 }
 
