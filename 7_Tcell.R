@@ -19,130 +19,6 @@ Tcell<-merge(Tcell,a)
 Tcell <- JoinLayers(Tcell)
 Tcell <- subset(Tcell, study !="Jerby_synovial_sarcoma")
 
-Tcell<-readRDS("Tcell.rds")
-Tcell[["RNA"]] <- split(Tcell[["RNA"]], f = Tcell$study)
-Tcell <- NormalizeData(Tcell)
-Tcell<- FindVariableFeatures(Tcell)
-Tcell <- ScaleData(Tcell)
-Tcell <- RunPCA(Tcell)
-
-Tcell <- FindNeighbors(Tcell, dims = 1:30, reduction = "pca")
-Tcell <- FindClusters(Tcell, resolution = 1, cluster.name = "unintegrated_clusters")
-
-Tcell <- IntegrateLayers(
-  object = Tcell, method = CCAIntegration,
-  orig.reduction = "pca", new.reduction = "integrated.cca",
-  verbose = FALSE
-)
-
-
-Tcell <- IntegrateLayers(
-  object = Tcell, method = RPCAIntegration,
-  orig.reduction = "pca", new.reduction = "integrated.rpca",
-  verbose = FALSE
-)
-
-Tcell <- IntegrateLayers(
-  object = Tcell, method = HarmonyIntegration,
-  orig.reduction = "pca", new.reduction = "harmony",
-  verbose = FALSE
-)
-
-Tcell <- IntegrateLayers(
-  object = Tcell, method = FastMNNIntegration,
-  new.reduction = "integrated.mnn",
-  verbose = FALSE
-)
-
-Tcell <- IntegrateLayers(
-  object = Tcell, method = scVIIntegration,
-  new.reduction = "integrated.scvi",
-  conda_env = "/home/d_qian/miniconda3/envs/scRNA", verbose = FALSE
-)
-
-Tcell <- FindNeighbors(Tcell, reduction = "integrated.cca", dims = 1:30)
-Tcell <- FindClusters(Tcell, resolution = 1, cluster.name = "cca_clusters")
-Tcell <- RunUMAP(Tcell, reduction = "integrated.cca", dims = 1:30, reduction.name = "umap.cca")
-
-Tcell <- FindNeighbors(Tcell, reduction = "integrated.rpca", dims = 1:30)
-Tcell <- FindClusters(Tcell, resolution = 1, cluster.name = "rpca_clusters")
-Tcell <- RunUMAP(Tcell, reduction = "integrated.rpca", dims = 1:30, reduction.name = "umap.rpca")
-
-Tcell <- FindNeighbors(Tcell, reduction = "harmony", dims = 1:30)
-Tcell <- FindClusters(Tcell, resolution = 1, cluster.name = "harmony_clusters")
-Tcell <- RunUMAP(Tcell, reduction = "harmony", dims = 1:30, reduction.name = "umap.harmony")
-
-Tcell <- FindNeighbors(Tcell, reduction = "integrated.mnn", dims = 1:30)
-Tcell <- FindClusters(Tcell, resolution = 1, cluster.name = "mnn_clusters")
-Tcell <- RunUMAP(Tcell, reduction = "integrated.mnn", dims = 1:30, reduction.name = "umap.mnn")
-
-Tcell <- FindNeighbors(Tcell, reduction = "integrated.scvi", dims = 1:30)
-Tcell <- FindClusters(Tcell, resolution = 1, cluster.name = "scvi_clusters")
-Tcell <- RunUMAP(Tcell, reduction = "integrated.scvi", dims = 1:30, reduction.name = "umap.scvi")
-
-Tcell <- JoinLayers(Tcell)
-saveRDS(Tcell, "Tcell_log.rds")
-
-Tcell[["RNA"]] <- as(object = Tcell[["RNA"]], Class = "Assay")
-library(sceasy)
-
-sceasy::convertFormat(Tcell, from="seurat", to="anndata",
-                       outFile='Tcell_log.h5ad')
-
-
-
-Tcell<-readRDS("Tcell.rds")
-
-Tcell[["RNA"]] <- split(Tcell[["RNA"]], f = Tcell$study)
-Tcell <- SCTransform(Tcell, vst.flavor = "v2")
-Tcell <- RunPCA(Tcell)
-
-Tcell <- FindNeighbors(Tcell, dims = 1:30, reduction = "pca")
-Tcell <- FindClusters(Tcell, resolution = 1, cluster.name = "unintegrated_clusters")
-Tcell <- RunUMAP(Tcell, dims = 1:30, reduction = "pca", reduction.name = "umap.unintegrated")
-
-Tcell  <- IntegrateLayers(
-  object = Tcell, method = CCAIntegration,
-  new.reduction = "integrated.cca", normalization.method = "SCT",
-  verbose = FALSE
-)
-
-Tcell <- IntegrateLayers(
-  object = Tcell, method = RPCAIntegration,
-  new.reduction = "integrated.rpca",normalization.method = "SCT",
-  verbose = FALSE
-)
-
-Tcell <- IntegrateLayers(
-  object = Tcell, method = HarmonyIntegration,
-  new.reduction = "harmony", normalization.method = "SCT",
-  verbose = FALSE
-)
-
-Tcell <- FindNeighbors(Tcell, reduction = "integrated.cca", dims = 1:30)
-Tcell <- FindClusters(Tcell, resolution = 1, cluster.name = "cca_clusters")
-Tcell <- RunUMAP(Tcell, reduction = "integrated.cca", dims = 1:30, reduction.name = "umap.cca")
-
-Tcell <- FindNeighbors(Tcell, reduction = "integrated.rpca", dims = 1:30)
-Tcell <- FindClusters(Tcell, resolution = 1, cluster.name = "rpca_clusters")
-Tcell <- RunUMAP(Tcell, reduction = "integrated.rpca", dims = 1:30, reduction.name = "umap.rpca")
-
-Tcell <- FindNeighbors(Tcell, reduction = "harmony", dims = 1:30)
-Tcell <- FindClusters(Tcell, resolution = 1, cluster.name = "harmony_clusters")
-Tcell <- RunUMAP(Tcell, reduction = "harmony", dims = 1:30, reduction.name = "umap.harmony")
-
-saveRDS(Tcell, "Tcell_SCT.rds")
-
-DefaultAssay(Tcell)<-"RNA"
-Tcell <- JoinLayers(Tcell)
-Tcell <- NormalizeData(Tcell)
-Tcell[["RNA"]] <- as(object = Tcell[["RNA"]], Class = "Assay")
-library(sceasy)
-
-sceasy::convertFormat(Tcell, from="seurat", to="anndata",
-                       outFile='Tcell_SCT.h5ad')
-
-
 
 ###select log CCA for the downstream analysis
 Tcell<-readRDS("Tcell.rds")
@@ -212,26 +88,6 @@ p<-DotPlot(Tcell, features = markers.to.plot, cols = c("yellow","blue"), dot.sca
    RotatedAxis()
 ggsave("../plots/Tcell_Bubble_heatmap_before.pdf", p, height=6, width=15, dpi=600)
 
-Tcell <- RenameIdents(object = Tcell,
-"0" = "CD8_GZMK+_Tem",
-"1" = "CD8_CX3CR1+_Tte",
-"2" = "CD4_activated_Tm",
-"3" = "CD4_Tcm",
-"4" = "CD4/CD8_Tn",
-"5" = "XCL1+_NK",
-"6" = "CD4_activated_Treg",
-"7" = "CD4_tissue-homing_Treg",
-"8" = "CD8_Ttex",
-"9" = "innate_like_gamma_delta_T",
-"10" = "CD4/CD8_Proliferating",
-"11" = "CD4/CD8_activated_T",
-"12" = "CD4/CD8_Tisg",
-"13" = "FGFBP2+_NK",
-"14" = "mito_high_T",
-"15" = "CD4_Tcm",
-"16" = "CD8_GZMK+_Tem",
-"17" = "non_T",
-"18" = "CD8_Tcm")
 
 Tcell <- subset(Tcell, cca_clusters_0.4 != 17)
 
@@ -308,8 +164,7 @@ ggsave("../plots/Tcell_Bubble_heatmap.pdf", p, height=6, width=15, dpi=600)
 #AHR、CD83、TNFRSF4、TNFRSF18、TOX2 和 MAFF,ICOS, CD4 Tfh
 #"IFNG",TNFRSF9 "CD8_Teff",
 #"CD44", memory T cells
-#Temra细胞通常通过以下几个维度表现出显著的基因特征： 细胞毒性基因（如 GZMB, PRF1, GZMK）趋化因子（如 CCL5, CX3CR1） NK细胞标志基因（如 KLRD1, KLRF1）衰竭相关基因（如 LAG3, TIM-3）,FGFBP2/CX3CR1/PRF1
-#TRGC1, TRDC, NCR3, KLRG1, 和 CXCR6 等基因的细胞更可能是 γδ T细胞
+
 #Tcm ：IL7R、GPR183,Tem ：CD40LG、ICOS、TNFRSF25、TRADD
 #MAIT:"SLC4A10","ZBTB16"
 
