@@ -100,7 +100,6 @@ for (i in 1:length(Wu)) {
 
 
 
-# 保存结果
 
 Wu<-subset(combined, study=="Wu_osteosarcoma")
 
@@ -166,20 +165,16 @@ Wu <- IntegrateLayers(
 
 library(dplyr)
 
-# 提取数据
 data <- FetchData(Wu, vars = c("seurat_clusters", "CNV_score"))
 
-# 计算每个cWuster的中位数
 cWuster_order <- data %>%
   group_by(seurat_cWusters) %>%
   summarise(med = median(CNV_score, na.rm = TRUE)) %>%
   arrange(med) %>%
   pull(seurat_cWusters)
 
-# 按中位数顺序重新设置因子
 Wu$seurat_cWusters <- factor(Wu$seurat_cWusters, levels = cWuster_order)
 
-# 重新画图
 VlnPlot(Wu, features = "CNV_score", group.by = "seurat_cWusters", pt.size = 0)
 
 
@@ -271,7 +266,6 @@ findMalignant_chr <- function(
     
     res <- fit_cor_and_sig(cors, signals, use.bootstraps, n.bootstraps, prob, coverage, ...)
 
-    # -------- 修改部分开始 --------
        if (isFALSE(res)) {
                if (verbose) message("GMM failed. Falling back to K-means cWustering...")
                set.seed(123)
@@ -289,7 +283,6 @@ findMalignant_chr <- function(
                )
                if (verbose) message("K-means classification successful.")
        }
-       # -------- 修改部分结束 --------
     corGroups <- res$corGroups
     sigGroups <- res$sigGroups
 
@@ -329,7 +322,6 @@ findMalignant_chr <- function(
                  col = border.col,
                  cex = cex)
 
-            # 给不同分组上色
             points(cors[result$nonmalignant], signals[result$nonmalignant],
                    col = groups.col[1], pch = pch, cex = cex)
             points(cors[result$malignant], signals[result$malignant],
@@ -349,7 +341,7 @@ findMalignant_chr <- function(
 fit_cor_and_sig <- function(cors, signals, use.bootstraps, n.bootstraps, prob, coverage, ...,
                             min.bootstraps = 8000, step = 1000, verbose = TRUE) {
     ## ------------------------
-    ## 第一阶段：先跑 CNA correlation
+    ##  CNA correlation
     ## ------------------------
     corGroups <- FALSE
     current_bootstraps <- n.bootstraps
@@ -380,7 +372,7 @@ fit_cor_and_sig <- function(cors, signals, use.bootstraps, n.bootstraps, prob, c
     }
     
     ## ------------------------
-    ## 第二阶段：再跑 CNA signal
+    ## CNA signal
     ## ------------------------
     sigGroups <- FALSE
     current_bootstraps <- n.bootstraps
@@ -411,7 +403,7 @@ fit_cor_and_sig <- function(cors, signals, use.bootstraps, n.bootstraps, prob, c
     }
     
     ## ------------------------
-    ## 如果两个都成功，返回
+    ## 
     ## ------------------------
     if (verbose) message("fitBimodal succeeded for both CNA correlations and CNA signals.")
     return(list(corGroups = corGroups, sigGroups = sigGroups))
@@ -438,20 +430,17 @@ Wu <- FindClusters(Wu, resolution = 0.2, cluster.name = "unintegrated_clusters_S
 Wu <- RunUMAP(Wu, dims = 1:30, reduction = "pca")
 
 
-# 提取数据
 data <- FetchData(Wu, vars = c("unintegrated_clusters_SCT", "CNV_score"))
 
-# 计算每个cluster的中位数
 cluster_order <- data %>%
   group_by(unintegrated_clusters_SCT) %>%
   summarise(med = median(CNV_score, na.rm = TRUE)) %>%
   arrange(med) %>%
   pull(unintegrated_clusters_SCT)
 
-# 按中位数顺序重新设置因子
 Wu$unintegrated_clusters_SCT <- factor(Wu$unintegrated_clusters_SCT, levels = cluster_order)
 
-# 重新画图
+
     p<-VlnPlot(Wu, features = c("CNV_score","COL1A1", "DCN","PECAM1","CLDN5","KDR","VWF","SOX10", "UBE2C", "EGFR","MPZ","DUSP6"), group.by = "unintegrated_clusters_SCT", pt.size = 0)
 ggsave("/Volumes/analysis/infercnv/Wu/VlnPlot.pdf", plot=p, height=10, width=15, dpi=600)
 
@@ -495,277 +484,3 @@ write.csv(Wu@meta.data,"/Volumes/analysis/infercnv/Wu/meta.csv")
 ##RMS: MYOD1 + MYF5 + MYOG, ARMS chr2 gain + PAX3/FOXO1 区域改变; ERMS chr8 gain + chr11p15 loss + chr7 gain
 ##UPS:"UBE2C","TOP2A","CCNB1","CDK1","AURKB","CENPF","MKI67"
 ##MPNST: SOX10, 低 +（UBE2C 或 TOP2A）高 +（EGFR 或 DUSP6）高,17q11.2 loss 或 9p21 loss
-
-
-##for DSRCT
-p <- DotPlot(
-DSRCT,
-  features = list(
-    "tumor_core" = c("WT1","FGFR4","IGF2","PDGFRB","FN1"), # Wu 融合/核心程序（WT1若掉测也看其余几个）
-    "epi_mix" = c("KRT8","KRT18","KRT19","EPCAM")  ,# 肿瘤常见的上皮混合程序
-    "Proliferation"  = c("MKI67","CCNB1","CDK1","TOP2A","UBE2C") ,# 增殖（肿瘤常高）
-    "Endothelial"    = c("PECAM1","VWF","KDR","CLDN5","ESAM","PLVAP"),   # 内皮
-    "Fibroblast"       = c("COL1A1","COL1A2","DCN","LUM","COL3A1","THBS2"),# 成纤维/CAF
-    "Pericyte / SMC"         = c("ACTA2","TAGLN","MYH11","RGS5")       # 周细胞/平滑肌
-  )
-) +
-  RotatedAxis() +
-  theme_bw(base_size = 12) +
-  theme(
-    axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
-    strip.text  = element_text(face = "bold")
-  )
-ggsave("/Volumes/analysis/infercnv/Wu/dotplot_Wu_states.pdf",
-       plot = p, height = 7, width = 12, dpi = 600)
-
-##for Wu
-p <- DotPlot(
-  Eps,
-  features = list(
-    "tumor_core_INI1_loss" = c("SMARCB1" ,"EZH2", "EED", "SUZ12","IGF2BP3" ),
-    "tumor_epithelial" = c("KRT8","KRT18","KRT19","EPCAM","KRT7","MUC1" )  ,# 肿瘤常见的上皮混合程序
-#  Classic-type Wu 的特征性支持（非所有病例都有，但出现即强支持）
-    "tumor_classic_support" = c("EGFR",  "MET", "CD34"),       # 经典型 ES (~50–70%) 阳性,
-    "Proliferation"  = c("MKI67","CCNB1","CDK1","TOP2A","UBE2C") ,# 增殖（肿瘤常高）
-    "Endothelial"    = c("PECAM1","VWF","KDR","CLDN5","ESAM","PLVAP"),   # 内皮
-    "Fibroblast"       = c("COL1A1","COL1A2","DCN","LUM","COL3A1","THBS2"),# 成纤维/CAF
-    "Pericyte / SMC"         = c("ACTA2","TAGLN","MYH11","RGS5")       # 周细胞/平滑肌
-  )
-) +
-  RotatedAxis() +
-  theme_bw(base_size = 12) +
-  theme(
-    axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
-    strip.text  = element_text(face = "bold")
-  )
-
-ggsave("/Volumes/analysis/infercnv/Wu/dotplot_Wu_states.pdf",
-       plot = p, height = 7, width = 12, dpi = 600)
-
-##Ewing
-p <- DotPlot(
-  Wu,
-  features = list(
-    "tumor_core" = c( "NR0B1",        # = DAX1，EWS-FLI1直接靶点，EwS高
-                      "NKX2-2",       # 经典EwS转录因子靶基因（诊断常用）
-                      "STEAP1",       # EwS高表达的膜蛋白，受EWS-FLI1调控
-                      "GLI1"    ),
-    "IGF axis / receptor" = c("IGF1", "IGF1R"), # EwS依赖IGF/IGF1R轴，常上调
-    "Surface / diagnostic aid" = c( "CD99",         # = MIC2；蛋白层面最经典，但RNA可变
-                                    "NCAM1" ),        # 可变（辅助）),       # 经典型 ES (~50–70%) 阳性,
-    "Proliferation"  = c("MKI67","CCNB1","CDK1","TOP2A","UBE2C") ,# 增殖（肿瘤常高）
-    "Endothelial"    = c("PECAM1","VWF","KDR","CLDN5","ESAM","PLVAP"),   # 内皮
-    "Fibroblast"       = c("COL1A1","COL1A2","DCN","LUM","COL3A1","THBS2"),# 成纤维/CAF
-    "Pericyte / SMC"         = c("ACTA2","TAGLN","MYH11","RGS5"),       # 周细胞/平滑肌
-    "Osteoblast_lineage" = c("ALPL","RUNX2","BGLAP"),
-    "Schwann/Glial" = c("SOX10","MPZ","PLP1"),
-    "Neuron_like" = c("TUBB3","STMN2","DCX","SNAP25")
-  )
-) +
-  RotatedAxis() +
-  theme_bw(base_size = 12) +
-  theme(
-    axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
-    strip.text  = element_text(face = "bold")
-  )
-
-ggsave("/Volumes/analysis/infercnv/Wu/dotplot_states.pdf",
-       plot = p, height = 7, width = 12, dpi = 600)
-
-
-# 自动扫描目录下的所有 run.final.infercnv_obj.rds 或 run.final.infercnv_obj
-base_dir <- "/Volumes/analysis/infercnv/Wu"
-samples <- list.dirs(base_dir, full.names = FALSE, recursive = FALSE)
-path  <- file.path(base_dir, samples, "run.final.infercnv_obj")
-
-# 读取 & 提取矩阵 ---------------------------------------------------
-extract_expr_matrix <- function(path, sample_id) {
-  message("Reading ", sample_id, " ...")
-  obj <- readRDS(path)
-  
-  mat <- as.matrix(obj@expr.data)
-  
-  # 返回矩阵与gene_order
-  go <- obj@gene_order
-  if (!"gene" %in% colnames(go)) go$gene <- rownames(go)
-  list(expr = mat, gene_order = go)
-  
-  mat <- mat[rownames(mat) %in% go$gene, , drop = FALSE]
-  go  <- go[match(rownames(mat), go$gene), ]
-  go$chr <- gsub("^chr", "", go$chr, ignore.case = TRUE)
-  go <- go[!go$chr %in% c("M","MT","m","mt"), ]
-  mat <- mat[go$gene, , drop = FALSE]
-
-  list(expr = mat, gene_order = go[, c("gene","chr","start","stop")])
-}
-
-lst <- imap(path, extract_expr_matrix)
-
-# 统一基因集合与顺序 ----------------------------------------------
-common_genes <- Reduce(intersect, lapply(lst, function(x) rownames(x$expr)))
-go0 <- lst[[1]]$gene_order
-go0 <- go0[go0$gene %in% common_genes, ]
-go0 <- go0[order(factor(go0$chr, levels = c(as.character(1:22),"X","Y")),
-                 as.numeric(go0$start)), ]
-genes_ordered <- go0$gene
-
-# 合并所有样本矩阵
-expr_list <- lapply(lst, function(x) x$expr[genes_ordered, , drop = FALSE])
-gene_cell_all <- do.call(cbind, expr_list)
-rownames(gene_cell_all) <- genes_ordered
-message("Merged matrix: ", nrow(gene_cell_all), " genes × ", ncol(gene_cell_all), " cells")
-
-# 细胞对齐到 Seurat 对象 ------------------------------------------
-common_cells <- intersect(colnames(Wu), colnames(gene_cell_all))
-gene_cell_all <- gene_cell_all[, common_cells, drop = FALSE]
-clusters <- Idents(Wu)[colnames(gene_cell_all)]
-
-# 每群下采样最多500个细胞 ----------------------------------------
-set.seed(42)
-by_cl <- split(names(clusters), clusters)
-sel_cells <- unlist(lapply(by_cl, function(v) {
-  k <- min(500, length(v))
-  if (length(v) > k) sample(v, k) else v
-}), use.names = FALSE)
-
-gene_cell_ds <- gene_cell_all[, sel_cells, drop = FALSE]
-clusters_ds <- clusters[sel_cells]
-
-# =========================
-# 5) 构造 inferCNV 主图方向的矩阵：
-#    行=细胞（按cluster排序与分块），列=基因（按chr→start固定）
-# =========================
-# 列 = 基因：基因顺序已经按 go0 固定
-# 行 = 细胞：按 cluster 排序并切块
-ord_rows <- order(clusters_ds)
-mat <- t(gene_cell_ds)[ord_rows, , drop = FALSE]   # 行=细胞，列=基因
-cl_sorted <- clusters_ds[ord_rows]
-
-# =========================
-# 6) inferCNV风格配色：中心 x.center，1%~99% 对称裁剪
-#    若你的矩阵是比例刻度（二倍体≈1），用 x.center=1；如是log刻度，用0
-# =========================
-x.center <- 1
-vals <- as.vector(mat); vals <- vals[is.finite(vals)]
-vals_neq <- vals[vals != x.center]
-if (length(vals_neq) < 10) {
-  delta <- max(0.05, 0.5 * sd(vals, na.rm = TRUE))
-} else {
-  qs <- quantile(vals_neq, probs = c(0.01, 0.99), na.rm = TRUE)
-  delta <- max(abs(x.center - qs[1]), abs(qs[2] - x.center))
-}
-low_th  <- x.center - delta
-high_th <- x.center + delta
-
-mat_clip <- mat
-mat_clip[mat_clip < low_th]  <- low_th
-mat_clip[mat_clip > high_th] <- high_th
-
-col_fun <- colorRamp2(c(low_th, x.center, high_th), c("darkblue","white","darkred"))
-
-# =========================
-# 7) 画图（推荐用 ComplexHeatmap 的栅格输出，文件小）
-#    行按 cluster 分块显示（相当于 inferCNV 的分组）
-# =========================
-row_split <- factor(cl_sorted, levels = unique(cl_sorted))
-col_split <- factor(go0$chr[match(colnames(mat_clip), go0$gene)],
-                    levels = c(as.character(1:22), "X", "Y"))
-# 2) 列分块：按染色体（确保顺序为 1..22, X, Y）
-outfile <- file.path(base_dir, "inferCNV_merged_downsampled.png")
-ragg::agg_png(outfile, width = 2000, height = 3000, res = 220)
-ht <- Heatmap(
-  mat_clip,
-  name = "CNV",
-  col = col_fun,
-  cluster_rows = FALSE,            # 行不聚类（我们已按cluster排好）
-  cluster_columns = FALSE,         # 列不聚类（我们已按chr→start排好）
-  row_split = row_split,           # 行按cluster分块
-  column_split = col_split,        # 列按染色体分块 ✅ 关键修正
-  show_row_names = FALSE,
-  show_column_names = FALSE,
-  use_raster = TRUE,               # 栅格化，文件小
-  raster_device = "png",
-  raster_quality = 2,
-  border = NA,
-  # 分块间距（可调）
-  row_gap = unit(1, "mm"),
-  column_gap = unit(1, "mm"),
-  # 染色体分块标题样式（默认会显示 1,2,...,X,Y）
-  column_title_gp = gpar(fontsize = 9, fontface = "bold"),
-  # 可选：行分块标题（cluster编号）
-  row_title_gp = gpar(fontsize = 9, fontface = "bold")
-)
-draw(ht)
-dev.off()
-
-##correlation
-# 1) 为每个 cluster 先得到基因层面的平均（沿用上面 cluster_profiles）
-## 先生成每个 cluster 的基因层面平均型谱：genes × clusters
-clusters_lvls <- levels(row_split)  # 与主图一致的cluster顺序
-cluster_profiles <- sapply(clusters_lvls, function(cl) {
-  colMeans(mat_clip[cl_sorted == cl, , drop = FALSE], na.rm = TRUE)  # 长度=基因数
-})
-# 补上行名=基因，列名=cluster
-rownames(cluster_profiles) <- colnames(mat_clip)
-colnames(cluster_profiles) <- clusters_lvls
-
-
-# 2) 构造每条染色体的聚合（中位数或均值都行）
-chr_levels <- c(as.character(1:22), "X", "Y")
-gene_chr  <- go0$chr[match(rownames(cluster_profiles), go0$gene)]
-gene_chr  <- factor(gene_chr, levels = chr_levels)
-
-# 聚合函数：按染色体对行聚合（对每个 cluster 列取每条 chr 的中位数）
-agg_by_chr <- apply(cluster_profiles, 2, function(v) {
-  tapply(v, gene_chr, median, na.rm = TRUE)
-})
-# 结果维度：染色体 × cluster
-
-# 3) 染色体维度上的 cluster 相关性
-cor_mat_chr <- cor(agg_by_chr, method = "spearman", use = "pairwise.complete.obs")
-
-# 4) 画热图
-ht_cor_chr <- ComplexHeatmap::Heatmap(
-  cor_mat_chr,
-  name = "r (chromosomes)",
-  col = colorRampPalette(rev(brewer.pal(7, "RdYlBu")))(100),
-  cluster_rows = TRUE,
-  cluster_columns = TRUE,
-  show_row_names = TRUE,
-  show_column_names = TRUE,
-  row_names_gp = grid::gpar(fontsize = 9),
-  column_names_gp = grid::gpar(fontsize = 9),
-  rect_gp = grid::gpar(col = NA)
-)
-
-outfile_cor2 <- file.path(base_dir, "cluster_CNV_correlation_byChr.png")
-ragg::agg_png(outfile_cor2, width = 1600, height = 1400, res = 220)
-draw(ht_cor_chr)
-dev.off()
-
-
-rho <- cor(cluster_profiles, method = "spearman", use = "pairwise.complete.obs")
-
-# 4) 画热图
-ht_cor_chr <- ComplexHeatmap::Heatmap(
-  rho,
-  name = "r (chromosomes)",
-  col = colorRampPalette(rev(brewer.pal(7, "RdYlBu")))(100),
-  cluster_rows = TRUE,
-  cluster_columns = TRUE,
-  show_row_names = TRUE,
-  show_column_names = TRUE,
-  row_names_gp = grid::gpar(fontsize = 9),
-  column_names_gp = grid::gpar(fontsize = 9),
-  rect_gp = grid::gpar(col = NA)
-)
-
-outfile_cor2 <- file.path(base_dir, "cluster_CNV_correlation.png")
-ragg::agg_png(outfile_cor2, width = 1600, height = 1400, res = 220)
-draw(ht_cor_chr)
-dev.off()
-
-
-cells<-read.csv("/Volumes/analysis/infercnv/tumor_cell.csv")
-tumor<-subset(combined,cells = cells$cell_name)
-saveRDS(tumor,"/Volumes/analysis/infercnv/tumor.rds")
